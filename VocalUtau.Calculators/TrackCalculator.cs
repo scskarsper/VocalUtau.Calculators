@@ -22,7 +22,7 @@ namespace VocalUtau.Calculators
             //100
             using (FileStream fs = new FileStream(@"D:\\test-t"+tracker.getIndex().ToString()+".bat", FileMode.Create))
             {
-                using (StreamWriter sw=new StreamWriter(fs,Encoding.GetEncoding("Shift-JIS")))
+                using (StreamWriter sw=new StreamWriter(fs))
                 {
                     sw.WriteLine("mkdir \"%temp%\\utaubk\"");
                     for (int i = 0; i < nlc.NotePreRenderList.Count; i++)
@@ -32,12 +32,12 @@ namespace VocalUtau.Calculators
                         {
                             string resStr = String.Join(" ", nlc.NotePreRenderList[i].ResamplerArgList);
                             resStr = resStr.Replace("{RESAMPLEROUTPUT}", @"temp$$$.wav");
-                            sw.WriteLine(@"G:\UtauLoader\utau\bin\Debug\resampler.exe "+resStr);
+                            sw.WriteLine(@"D:\VocalUtau\VocalUtau.DebugExampleFiles\UTAUKernel\resampler.exe " + resStr);
                         }
                         string wavStr = String.Join(" ", nlc.NotePreRenderList[i].WavtoolArgList);
                         wavStr = wavStr.Replace("{RESAMPLEROUTPUT}", @"temp$$$.wav");
                         wavStr = wavStr.Replace("{WAVOUTPUT}", @"temp.wav");
-                        sw.WriteLine(@"G:\UtauLoader\utau\bin\Debug\wavtool.exe " + wavStr);
+                        sw.WriteLine(@"D:\VocalUtau\VocalUtau.DebugExampleFiles\UTAUKernel\wavtool.exe " + wavStr);
                     }
                 }
             }

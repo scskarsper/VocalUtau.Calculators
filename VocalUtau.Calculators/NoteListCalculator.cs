@@ -19,6 +19,7 @@ namespace VocalUtau.Calculators
             public double StartTime { get; set; }
             public long StartTick { get; set; }
             public long Length { get; set; }
+            public double StartPoint { get; set; }
             public double TimeLen { get; set; }
             public double Tempo { get; set; }
             public string Note { get; set; }
@@ -157,9 +158,9 @@ namespace VocalUtau.Calculators
             ret.EnvlopePoints = NPR.EnvlopePoints;
             ret.FadeInLengthMs = (long)NPR.FadeInLengthMs;
             ret.FadeOutLengthMs = (long)NPR.FadeOutLengthMs;
-            ret.InputWavfile = InputWav;
+            ret.InputWavfile = NPR.Note=="{R}"?"{R}":InputWav;
             ret.OutputWavfile = OutputWav;
-            ret.StartPointMs = (long)(NPR.passTime * 1000);// (long)NPR.OtoAtom.SoundStartMs;
+            ret.StartPointMs = NPR.StartPoint;// (long)(NPR.passTime * 1000);// (long)NPR.OtoAtom.SoundStartMs;
             ret.Tempo = NPR.Tempo;
             ret.ThisPreutterOverlapsArgs = NPR.OtoAtom.PreutterOverlapsArgs;
             ret.NextPreutterOverlapsArgs = new SoundAtom.PreUtterOverlapArgs();
@@ -233,6 +234,7 @@ namespace VocalUtau.Calculators
                         pra.TimeLen = MidiMathUtils.Tick2Time(pra.Length,parts.Tempo)*1000;
                         TotalTick += pra.Length;
                         pra.Note = GetNote(curNote.PitchValue.NoteNumber);
+                        pra.StartPoint = defDouble(curNote.PhonemeAtoms[i].StartPoint,0);
                         string defflag="";
                         string resamp = "";
                         try
@@ -393,16 +395,8 @@ namespace VocalUtau.Calculators
                 string[] WavList = wa == null ? new string[0] : UtauRendCommanderUtils.GetWavtoolArgs(wa);
                 lock (locker)
                 {
-                    List<string> LSL = new List<string>();
-                    if (_NotePreRenderList[i].Note == "{R}")
-                    {
-                        for (int j = 0; j <= 5; j++) LSL.Add(WavList[j]);
-                        LSL[5] = "0";
-                    }
-                    else
-                    {
-                        for (int j = 0; j <= 12; j++) LSL.Add(WavList[j]);
-                    }
+                    List<string> LSL = new List<string>(); 
+                    for (int j = 0; j <= Math.Min(12, WavList.Length - 1); j++) LSL.Add(WavList[j]);
                     _NotePreRenderList[i].ResamplerArg = ra;
                     _NotePreRenderList[i].ResamplerArgList = ResList;
                     _NotePreRenderList[i].WavtoolArgs = wa;
