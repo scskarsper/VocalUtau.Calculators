@@ -30,6 +30,14 @@ namespace VocalUtau.Calculators
             public string Flags { get; set; }
             public string Resampler { get; set; }
 
+            private SoundAtom.PreUtterOverlapArgs _realPreUtterOverArgs = new SoundAtom.PreUtterOverlapArgs();
+
+            public SoundAtom.PreUtterOverlapArgs RealPreUtterOverArgs
+            {
+                get { if (_realPreUtterOverArgs == null)_realPreUtterOverArgs = new SoundAtom.PreUtterOverlapArgs(); return _realPreUtterOverArgs; }
+                set { _realPreUtterOverArgs = value; }
+            }
+
             private SoundAtom otoat = new SoundAtom();
             public SoundAtom OtoAtom
             {
@@ -77,9 +85,9 @@ namespace VocalUtau.Calculators
                 set { _volumePercentInt = value; }
             }
 
-            SortedDictionary<long, long> _EnvlopePoints = new SortedDictionary<long, long>();
+            SortedDictionary<double, long> _EnvlopePoints = new SortedDictionary<double, long>();
 
-            public SortedDictionary<long, long> EnvlopePoints
+            public SortedDictionary<double, long> EnvlopePoints
             {
                 get { return _EnvlopePoints; }
                 set { _EnvlopePoints = value; }
@@ -156,17 +164,17 @@ namespace VocalUtau.Calculators
         {
             UtauRendCommanderUtils.WavtoolArgs ret = new UtauRendCommanderUtils.WavtoolArgs();
             ret.EnvlopePoints = NPR.EnvlopePoints;
-            ret.FadeInLengthMs = (long)NPR.FadeInLengthMs;
-            ret.FadeOutLengthMs = (long)NPR.FadeOutLengthMs;
+            ret.FadeInLengthMs = NPR.FadeInLengthMs;
+            ret.FadeOutLengthMs = NPR.FadeOutLengthMs;
             ret.InputWavfile = NPR.Note=="{R}"?"{R}":InputWav;
             ret.OutputWavfile = OutputWav;
             ret.StartPointMs = NPR.StartPoint;// (long)(NPR.passTime * 1000);// (long)NPR.OtoAtom.SoundStartMs;
             ret.Tempo = NPR.Tempo;
-            ret.ThisPreutterOverlapsArgs = NPR.OtoAtom.PreutterOverlapsArgs;
+            ret.ThisPreutterOverlapsArgs = NPR.RealPreUtterOverArgs;
             ret.NextPreutterOverlapsArgs = new SoundAtom.PreUtterOverlapArgs();
             try
             {
-                ret.NextPreutterOverlapsArgs = NextNPR.OtoAtom.PreutterOverlapsArgs;
+                ret.NextPreutterOverlapsArgs = NextNPR.RealPreUtterOverArgs;
             }
             catch { ;}
             ret.TickLength = NPR.Length;
@@ -234,7 +242,7 @@ namespace VocalUtau.Calculators
                         pra.TimeLen = MidiMathUtils.Tick2Time(pra.Length,parts.Tempo)*1000;
                         TotalTick += pra.Length;
                         pra.Note = GetNote(curNote.PitchValue.NoteNumber);
-                        pra.StartPoint = defDouble(curNote.PhonemeAtoms[i].StartPoint,0);
+                        pra.StartPoint = defDouble(curNote.PhonemeAtoms[j].StartPoint,0);
                         string defflag="";
                         string resamp = "";
                         try
@@ -269,6 +277,8 @@ namespace VocalUtau.Calculators
                             pra.OtoAtom = (SoundAtom)vio.SndAtomList[vid].Clone();
                             pra.OtoAtom.PreutterOverlapsArgs.PreUtterance = defDouble(curNote.PhonemeAtoms[j].PreUtterance, pra.OtoAtom.PreutterOverlapsArgs.PreUtterance);
                             pra.OtoAtom.PreutterOverlapsArgs.OverlapMs = defDouble(curNote.PhonemeAtoms[j].Overlap, pra.OtoAtom.PreutterOverlapsArgs.OverlapMs);
+                            pra.RealPreUtterOverArgs.PreUtterance = pra.OtoAtom.PreutterOverlapsArgs.PreUtterance;
+                            pra.RealPreUtterOverArgs.OverlapMs = pra.OtoAtom.PreutterOverlapsArgs.OverlapMs;
                             pra.OtoAtom.WavFile = PathUtils.AbsolutePath(fio, pra.OtoAtom.WavFile);
                             pra.FadeInLengthMs = curNote.PhonemeAtoms[j].FadeInLengthMs;
                             pra.FadeOutLengthMs = curNote.PhonemeAtoms[j].FadeOutLengthMs;
@@ -300,7 +310,7 @@ namespace VocalUtau.Calculators
                             
                             if (pra.StartTick < 0) pra.StartTick = 0;
                             List<int> PointVS = new List<int>();
-                            SortedDictionary<long,long> EnvVs = new SortedDictionary<long,long>();
+                            SortedDictionary<double, long> EnvVs = new SortedDictionary<double, long>();
                             long lastDYNValue = -100;
                             for (long k = pra.StartTick; k <= pra.StartTick + pra.Length + 50; k = k + 5)
                             {
@@ -308,7 +318,7 @@ namespace VocalUtau.Calculators
                                 long dyn=(long)(parts.DynCompiler.getDynValue(k)+parts.DynBaseValue);
                                 if (dyn != lastDYNValue)
                                 {
-                                    long TimeMs = (long)(MidiMathUtils.Tick2Time(k-pra.StartTick, parts.Tempo) * 1000);
+                                    double TimeMs = (MidiMathUtils.Tick2Time(k - pra.StartTick, parts.Tempo) * 1000);
                                     if(!EnvVs.ContainsKey(TimeMs))EnvVs.Add(TimeMs, dyn);
                                 }
                             }
@@ -389,6 +399,46 @@ namespace VocalUtau.Calculators
                 {
                     Nxt = _NotePreRenderList[i + 1];
                 }
+
+                /*
+                 * 修正PreOverlap
+                 */
+                if (Nxt != null)
+                {
+                    double PRE = Nxt.RealPreUtterOverArgs.PreUtterance;
+                    double OVL = Nxt.RealPreUtterOverArgs.OverlapMs;
+                    double KickFront = PRE - OVL;
+                    double halfNote = _NotePreRenderList[i].TimeLen / 2;
+                    if (halfNote < KickFront)
+                    {
+                        //NEED FIX
+                        double ovl = OVL / (PRE - OVL) * halfNote;
+                        double pre = PRE / (PRE - OVL) * halfNote;
+                        double stp = PRE / (PRE - OVL) * halfNote;
+                        if (Nxt.FadeInLengthMs == OVL && _NotePreRenderList[i].FadeOutLengthMs == OVL)
+                        {
+                            Nxt.FadeInLengthMs = ovl;
+                            _NotePreRenderList[i].FadeOutLengthMs = ovl;
+                        }
+                        Nxt.RealPreUtterOverArgs.OverlapMs = ovl;
+                        Nxt.RealPreUtterOverArgs.PreUtterance = pre;
+                        Nxt.StartPoint = PRE - pre;
+                    }
+                }
+                /*
+                 * 修正结束
+                 */
+                if (_NotePreRenderList[i].FadeInLengthMs < _NotePreRenderList[i].RealPreUtterOverArgs.OverlapMs)
+                {
+                    _NotePreRenderList[i].FadeInLengthMs = _NotePreRenderList[i].RealPreUtterOverArgs.OverlapMs;
+                }
+                if (Nxt != null)
+                {
+                    if (_NotePreRenderList[i].FadeOutLengthMs < Nxt.RealPreUtterOverArgs.OverlapMs)
+                    {
+                        _NotePreRenderList[i].FadeOutLengthMs = Nxt.RealPreUtterOverArgs.OverlapMs;
+                    }
+                }
                 UtauRendCommanderUtils.ResamplerArgs ra = _NotePreRenderList[i].Note=="{R}"?null:NPR2ResamplerArgs(_NotePreRenderList[i],Nxt, "{RESAMPLEROUTPUT}");
                 string[] ResList = ra == null ? new string[0] : UtauRendCommanderUtils.GetResamplerArg(ra);
                 UtauRendCommanderUtils.WavtoolArgs wa = NPR2WavtoolArgs(_NotePreRenderList[i], Nxt, "{RESAMPLEROUTPUT}", "{WAVOUTPUT}");
@@ -406,3 +456,9 @@ namespace VocalUtau.Calculators
         }
     }
 }
+
+/*L)
+ * pre = PRE / (PRE - OVL) *  x / 2
+ * ovl = OVL / (PRE - OVL) *  x / 2
+ * STP = PRE - pre
+ */

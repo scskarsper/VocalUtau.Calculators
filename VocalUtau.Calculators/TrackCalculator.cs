@@ -41,6 +41,29 @@ namespace VocalUtau.Calculators
                     }
                 }
             }
+
+
+            //101
+            using (FileStream fs = new FileStream(@"D:\\test-b" + tracker.getIndex().ToString() + ".txt", FileMode.Create))
+            {
+                using (StreamWriter sw = new StreamWriter(fs))
+                {
+                    for (int i = 0; i < nlc.NotePreRenderList.Count; i++)
+                    {
+                        //"{RESAMPLEROUTPUT}", "{WAVOUTPUT}");
+                        if (nlc.NotePreRenderList[i].ResamplerArg != null)
+                        {
+                            string resStr = String.Join(" ", nlc.NotePreRenderList[i].ResamplerArgList);
+                            resStr = resStr.Replace("{RESAMPLEROUTPUT}", @"temp$$$.wav");
+                            sw.WriteLine(@"resampler.exe " + resStr.Replace(@"D:\VocalUtau\VocalUtau\bin\Debug\voicedb\YongQi_CVVChinese_Version2\",""));
+                        }
+                        string wavStr = String.Join(" ", nlc.NotePreRenderList[i].WavtoolArgList);
+                        wavStr = wavStr.Replace("{RESAMPLEROUTPUT}", @"temp$$$.wav");
+                        wavStr = wavStr.Replace("{WAVOUTPUT}", @"temp.wav");
+                        sw.WriteLine(@"wavtool.exe " + wavStr.Replace(@"D:\VocalUtau\VocalUtau\bin\Debug\voicedb\YongQi_CVVChinese_Version2\", ""));
+                    }
+                }
+            }
         }
     }
 }
