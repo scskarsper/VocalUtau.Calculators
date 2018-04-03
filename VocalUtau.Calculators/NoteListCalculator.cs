@@ -150,11 +150,17 @@ namespace VocalUtau.Calculators
             UtauRendCommanderUtils.ResamplerArgs ra = new UtauRendCommanderUtils.ResamplerArgs(NPR.OtoAtom, OutputWav, NPR.Tempo, NPR.Length, NPR.Note, NPR.Moduration, NPR.Intensity);
             ra.PitchString = NPR.PitchString;
             ra.ThisPreutterOverlapsArgs = NPR.OtoAtom.PreutterOverlapsArgs;
+            ra.ThisRealPreutterOverlapsArgs = NPR.RealPreUtterOverArgs;
             ra.Flags = NPR.Flags;
             ra.NextPreutterOverlapsArgs = new SoundAtom.PreUtterOverlapArgs();
             try
             {
                 ra.NextPreutterOverlapsArgs = NextNPR.OtoAtom.PreutterOverlapsArgs;
+            }
+            catch { ;}
+            try
+            {
+                ra.NextRealPreutterOverlapsArgs = NextNPR.RealPreUtterOverArgs;
             }
             catch { ;}
             return ra;
@@ -267,6 +273,11 @@ namespace VocalUtau.Calculators
                         if (vio.PrefixAtomList.SufFix.ContainsKey(nn)) suff = vio.PrefixAtomList.SufFix[nn];
                         baa.PhonemeSymbol = pref + curNote.PhonemeAtoms[j].PhonemeAtom + suff;
                         int vid = vio.SndAtomList.IndexOf(baa);
+                        if (vio.SndAtomList[vid].WavFile.IndexOf("F4\\shi_shi_shi.wav")!=-1)
+                        {
+                            int ra = 0;
+                            ra = 1;
+                        }
                         if (vid == -1 && pref != "" && suff != "")
                         {
                             baa.PhonemeSymbol = curNote.PhonemeAtoms[j].PhonemeAtom;
