@@ -44,10 +44,6 @@
     <Compile Include="TrackCalculator.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\VocalUtau.DirectUI\VocalUtau.DirectUI.Forms\VocalUtau.DirectUI.Forms.csproj">
-      <Project>{eb4142f3-fa96-45d9-a817-0b0b9604541b}</Project>
-      <Name>VocalUtau.DirectUI.Forms</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\VocalUtau.DirectUI\VocalUtau.DirectUI.Utils\VocalUtau.DirectUI.Utils.csproj">
       <Project>{10feb9fa-9308-42aa-b5fb-dac652508095}</Project>
       <Name>VocalUtau.DirectUI.Utils</Name>

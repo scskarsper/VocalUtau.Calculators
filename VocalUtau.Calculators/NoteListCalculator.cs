@@ -13,6 +13,7 @@ namespace VocalUtau.Calculators
 {
     public class NoteListCalculator
     {
+        [Serializable]
         public class NotePreRender : IComparable, IComparer<NotePreRender>
         {
             public long Tick { get; set; }
