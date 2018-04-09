@@ -58,25 +58,28 @@ namespace VocalUtau.Calculators
                 ResultList.AddRange(PreCalcer[i]);
                 TimeState = p.getStartTime()+p.getDuringTime();
             }
+            Debug_CreateBat(ResultList,tracker, BaseTempo);
             return ResultList;
+        }
 
-
-            /*//100
+        void Debug_CreateBat(List<NoteListCalculator.NotePreRender> NList,TrackerObject tracker, double BaseTempo)
+        {
+            //100
             using (FileStream fs = new FileStream(@"D:\\test-t"+tracker.getIndex().ToString()+".bat", FileMode.Create))
             {
                 using (StreamWriter sw=new StreamWriter(fs))
                 {
                     sw.WriteLine("mkdir \"%temp%\\utaubk\"");
-                    for (int i = 0; i < nlc.NotePreRenderList.Count; i++)
+                    for (int i = 0; i < NList.Count; i++)
                     {
                         //"{RESAMPLEROUTPUT}", "{WAVOUTPUT}");
-                        if (nlc.NotePreRenderList[i].ResamplerArg != null)
+                        if (NList[i].ResamplerArg != null)
                         {
-                            string resStr = String.Join(" ", nlc.NotePreRenderList[i].ResamplerArgList);
+                            string resStr = String.Join(" ", NList[i].ResamplerArgList);
                             resStr = resStr.Replace("{RESAMPLEROUTPUT}", @"temp$$$.wav");
                             sw.WriteLine(@"D:\VocalUtau\VocalUtau.DebugExampleFiles\UTAUKernel\resampler.exe " + resStr);
                         }
-                        string wavStr = String.Join(" ", nlc.NotePreRenderList[i].WavtoolArgList);
+                        string wavStr = String.Join(" ", NList[i].WavtoolArgList);
                         wavStr = wavStr.Replace("{RESAMPLEROUTPUT}", @"temp$$$.wav");
                         wavStr = wavStr.Replace("{WAVOUTPUT}", @"temp.wav");
                         sw.WriteLine(@"D:\VocalUtau\VocalUtau.DebugExampleFiles\UTAUKernel\wavtool.exe " + wavStr);
@@ -90,22 +93,22 @@ namespace VocalUtau.Calculators
             {
                 using (StreamWriter sw = new StreamWriter(fs))
                 {
-                    for (int i = 0; i < nlc.NotePreRenderList.Count; i++)
+                    for (int i = 0; i < NList.Count; i++)
                     {
                         //"{RESAMPLEROUTPUT}", "{WAVOUTPUT}");
-                        if (nlc.NotePreRenderList[i].ResamplerArg != null)
+                        if (NList[i].ResamplerArg != null)
                         {
-                            string resStr = String.Join(" ", nlc.NotePreRenderList[i].ResamplerArgList);
+                            string resStr = String.Join(" ", NList[i].ResamplerArgList);
                             resStr = resStr.Replace("{RESAMPLEROUTPUT}", @"temp$$$.wav");
                             sw.WriteLine(@"resampler.exe " + resStr.Replace(@"D:\VocalUtau\VocalUtau\bin\Debug\voicedb\YongQi_CVVChinese_Version2\",""));
                         }
-                        string wavStr = String.Join(" ", nlc.NotePreRenderList[i].WavtoolArgList);
+                        string wavStr = String.Join(" ", NList[i].WavtoolArgList);
                         wavStr = wavStr.Replace("{RESAMPLEROUTPUT}", @"temp$$$.wav");
                         wavStr = wavStr.Replace("{WAVOUTPUT}", @"temp.wav");
                         sw.WriteLine(@"wavtool.exe " + wavStr.Replace(@"D:\VocalUtau\VocalUtau\bin\Debug\voicedb\YongQi_CVVChinese_Version2\", ""));
                     }
                 }
-            }*/
+            }
         }
     }
 }

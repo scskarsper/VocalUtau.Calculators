@@ -314,7 +314,7 @@ namespace VocalUtau.Calculators
                             {
                                 pra.passTime = 0;
                             }
-                            
+
                             if (pra.StartTick < 0) pra.StartTick = 0;
                             List<int> PointVS = new List<int>();
                             SortedDictionary<double, long> EnvVs = new SortedDictionary<double, long>();
@@ -322,16 +322,41 @@ namespace VocalUtau.Calculators
                             for (long k = pra.StartTick; k <= pra.StartTick + pra.Length + 50; k = k + 5)
                             {
                                 PointVS.Add((int)(parts.PitchCompiler.getRealPitch(k) - curNote.PitchValue.NoteNumber) * 100);
-                                long dyn=(long)(parts.DynCompiler.getDynValue(k)+parts.DynBaseValue);
+                                long dyn = (long)(parts.DynCompiler.getDynValue(k) + parts.DynBaseValue);
                                 if (dyn != lastDYNValue)
                                 {
                                     double TimeMs = (MidiMathUtils.Tick2Time(k - pra.StartTick, parts.Tempo) * 1000);
-                                    if(!EnvVs.ContainsKey(TimeMs))EnvVs.Add(TimeMs, dyn);
+                                    if (!EnvVs.ContainsKey(TimeMs)) EnvVs.Add(TimeMs, dyn);
                                 }
                             }
                             pra.EnvlopePoints = EnvVs;
                             pra.PitchString = PitchEncoderUtils.Encode(PointVS);
                             NPR.Add(pra);
+                        }
+                        else
+                        {
+                            pra.OtoAtom = new SoundAtom();
+                            pra.OtoAtom.PhonemeSymbol = "{R}";
+                            pra.Note = "{R}";
+                            pra.StartTime = MidiMathUtils.Tick2Time(pra.Tick, pra.Tempo);
+                            if (StartTick - pra.Tick > pra.Length)
+                            {
+                                pra.passTime = double.MaxValue;
+                            }
+                            else if (StartTick - pra.Tick > 0)
+                            {
+                                pra.passTime = MidiMathUtils.Tick2Time(StartTick - pra.Tick, pra.Tempo) * 1000;
+                            }
+                            else
+                            {
+                                pra.passTime = 0;
+                            }
+
+                            if (pra.StartTick < 0) pra.StartTick = 0;
+                            lock (locker)
+                            {
+                                NPR.Add(pra);
+                            }
                         }
                     }
                     lock (locker)
