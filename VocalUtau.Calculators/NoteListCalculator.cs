@@ -441,12 +441,15 @@ namespace VocalUtau.Calculators
                     double OVL = Nxt.RealPreUtterOverArgs.OverlapMs;
                     double KickFront = PRE - OVL;
                     double halfNote = _NotePreRenderList[i].TimeLen / 2;
-                    if (halfNote < KickFront)
+                    if (_NotePreRenderList[i].Note == "{R}")
+                    {
+                        halfNote=_NotePreRenderList[i].TimeLen;
+                    }
+                    if (halfNote < KickFront) 
                     {
                         //NEED FIX
                         double ovl = OVL / (PRE - OVL) * halfNote;
                         double pre = PRE / (PRE - OVL) * halfNote;
-                        double stp = PRE / (PRE - OVL) * halfNote;
                         if (Nxt.FadeInLengthMs == OVL && _NotePreRenderList[i].FadeOutLengthMs == OVL)
                         {
                             Nxt.FadeInLengthMs = ovl;
