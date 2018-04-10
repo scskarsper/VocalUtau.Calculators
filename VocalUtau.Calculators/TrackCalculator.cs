@@ -17,12 +17,12 @@ namespace VocalUtau.Calculators
         {
             this.SingerDataFinder = SingerDataFinder;
         }
-        public List<NoteListCalculator.NotePreRender> CalcTracker(TrackerObject tracker,double BaseTempo)
+        public List<NoteListCalculator.NotePreRender> CalcTracker(TrackerObject tracker, double BaseTempo)
         {
             List<NoteListCalculator.NotePreRender> ResultList = new List<NoteListCalculator.NotePreRender>();
             Dictionary<int, NoteListCalculator.NotePreRender[]> PreCalcer = new Dictionary<int, NoteListCalculator.NotePreRender[]>();
             Object oLocker = new Object();
-            Parallel.For(0,tracker.PartList.Count,(i)=>
+            Parallel.For(0, tracker.PartList.Count, (i) =>
             {
                 NoteListCalculator nlc = new NoteListCalculator(SingerDataFinder);
                 nlc.FillPartsNotes(tracker.PartList[0], 0);
@@ -36,9 +36,10 @@ namespace VocalUtau.Calculators
             {
                 PartsObject p = tracker.PartList[i];
                 double TimeDert = p.getStartTime() - TimeState;
+                VocalUtau.Calculators.NoteListCalculator.NotePreRender LastR = null;
                 if (TimeDert > 0)
                 {
-                    long TickRStart=MidiMathUtils.Time2Tick(TimeState, BaseTempo);
+                    long TickRStart = MidiMathUtils.Time2Tick(TimeState, BaseTempo);
                     long TickLength = MidiMathUtils.Time2Tick(TimeDert, BaseTempo);
                     while (TickLength > 0)
                     {
@@ -52,22 +53,56 @@ namespace VocalUtau.Calculators
                         npr.Tempo = BaseTempo;
                         npr.Note = "{R}";
                         npr.TimeLen = MidiMathUtils.Tick2Time(npr.Length, BaseTempo) * 1000;
+                        LastR = npr;
                         ResultList.Add(npr);
                     }
                 }
+                //FixFirstNode
+                if (LastR != null)
+                {
+                    try
+                    {
+                        VocalUtau.Calculators.NoteListCalculator.NotePreRender Nxt = PreCalcer[i][0];
+                        if (Nxt != null)
+                        {
+                            if (Nxt.Note != "{R}")
+                            {
+                                double PRE = Nxt.RealPreUtterOverArgs.PreUtterance;
+                                double OVL = Nxt.RealPreUtterOverArgs.OverlapMs;
+                                double KickFront = PRE - OVL;
+                                double halfNote = LastR.TimeLen;
+                                if (halfNote < KickFront)
+                                {
+                                    //NEED FIX
+                                    double ovl = OVL / (PRE - OVL) * halfNote;
+                                    double pre = PRE / (PRE - OVL) * halfNote;
+                                    if (Nxt.FadeInLengthMs == OVL)
+                                    {
+                                        Nxt.FadeInLengthMs = ovl;
+                                    }
+                                    Nxt.RealPreUtterOverArgs.OverlapMs = ovl;
+                                    Nxt.RealPreUtterOverArgs.PreUtterance = pre;
+                                    Nxt.StartPoint = PRE - pre;
+                                }
+                            }
+                        }
+                    }
+                    catch { ;}
+                }
                 ResultList.AddRange(PreCalcer[i]);
-                TimeState = p.getStartTime()+p.getDuringTime();
+                TimeState = p.getStartTime() + p.getDuringTime();
             }
-            Debug_CreateBat(ResultList,tracker, BaseTempo);
+            //FixFirstNodeEnd
+            Debug_CreateBat(ResultList, tracker, BaseTempo);
             return ResultList;
         }
 
-        void Debug_CreateBat(List<NoteListCalculator.NotePreRender> NList,TrackerObject tracker, double BaseTempo)
+        void Debug_CreateBat(List<NoteListCalculator.NotePreRender> NList, TrackerObject tracker, double BaseTempo)
         {
             //100
-            using (FileStream fs = new FileStream(@"D:\\test-t"+tracker.getIndex().ToString()+".bat", FileMode.Create))
+            using (FileStream fs = new FileStream(@"D:\\test-t" + tracker.getIndex().ToString() + ".bat", FileMode.Create))
             {
-                using (StreamWriter sw=new StreamWriter(fs))
+                using (StreamWriter sw = new StreamWriter(fs))
                 {
                     sw.WriteLine("mkdir \"%temp%\\utaubk\"");
                     for (int i = 0; i < NList.Count; i++)
@@ -100,7 +135,7 @@ namespace VocalUtau.Calculators
                         {
                             string resStr = String.Join(" ", NList[i].ResamplerArgList);
                             resStr = resStr.Replace("{RESAMPLEROUTPUT}", @"temp$$$.wav");
-                            sw.WriteLine(@"resampler.exe " + resStr.Replace(@"D:\VocalUtau\VocalUtau\bin\Debug\voicedb\YongQi_CVVChinese_Version2\",""));
+                            sw.WriteLine(@"resampler.exe " + resStr.Replace(@"D:\VocalUtau\VocalUtau\bin\Debug\voicedb\YongQi_CVVChinese_Version2\", ""));
                         }
                         string wavStr = String.Join(" ", NList[i].WavtoolArgList);
                         wavStr = wavStr.Replace("{RESAMPLEROUTPUT}", @"temp$$$.wav");
