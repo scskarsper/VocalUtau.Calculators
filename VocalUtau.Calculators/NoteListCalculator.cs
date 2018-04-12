@@ -17,7 +17,10 @@ namespace VocalUtau.Calculators
         public class NotePreRender : IComparable, IComparer<NotePreRender>
         {
             public long Tick { get; set; }
-            public double StartTime { get; set; }
+            public double TimTag { get; set; }
+            public double StartTime { get { return MidiMathUtils.Tick2Time(Tick, Tempo) + StartTimeAttend; } }
+            public double absoluteStartTime { get { return partStartTime + StartTime; } }
+            public double StartTimeAttend { get; set; }
             public long StartTick { get; set; }
             public long Length { get; set; }
             public double StartPoint { get; set; }
@@ -299,8 +302,8 @@ namespace VocalUtau.Calculators
                             }
                             pra.Intensity = defDouble(curNote.PhonemeAtoms[j].Intensity, 100);
                             pra.Moduration = defDouble(curNote.PhonemeAtoms[j].Modulation, 0);
-                            pra.StartTime = MidiMathUtils.Tick2Time(pra.Tick, pra.Tempo);
-                            pra.StartTime -= pra.OtoAtom.PreutterOverlapsArgs.OverlapMs / 1000;
+                            //pra.StartTime = MidiMathUtils.Tick2Time(pra.Tick, pra.Tempo);
+                            pra.StartTimeAttend = -pra.OtoAtom.PreutterOverlapsArgs.OverlapMs / 1000;
                             pra.StartTick = MidiMathUtils.Time2Tick(pra.StartTime, pra.Tempo);
                             if (StartTick - pra.Tick > pra.Length)
                             {
@@ -338,7 +341,7 @@ namespace VocalUtau.Calculators
                             pra.OtoAtom = new SoundAtom();
                             pra.OtoAtom.PhonemeSymbol = "{R}";
                             pra.Note = "{R}";
-                            pra.StartTime = MidiMathUtils.Tick2Time(pra.Tick, pra.Tempo);
+                            //pra.StartTime = MidiMathUtils.Tick2Time(pra.Tick, pra.Tempo);
                             if (StartTick - pra.Tick > pra.Length)
                             {
                                 pra.passTime = double.MaxValue;
@@ -458,6 +461,8 @@ namespace VocalUtau.Calculators
                         Nxt.RealPreUtterOverArgs.OverlapMs = ovl;
                         Nxt.RealPreUtterOverArgs.PreUtterance = pre;
                         Nxt.StartPoint = PRE - pre;
+                        //DEG
+                        Nxt.StartTimeAttend = -Nxt.RealPreUtterOverArgs.OverlapMs / 1000;
                     }
                 }
                 /*
@@ -480,12 +485,12 @@ namespace VocalUtau.Calculators
                 string[] WavList = wa == null ? new string[0] : UtauRendCommanderUtils.GetWavtoolArgs(wa);
                 lock (locker)
                 {
-                    List<string> LSL = new List<string>(); 
-                    for (int j = 0; j <= Math.Min(12, WavList.Length - 1); j++) LSL.Add(WavList[j]);
+                   // List<string> LSL = new List<string>(); 
+                   // for (int j = 0; j <= Math.Min(12, WavList.Length - 1); j++) LSL.Add(WavList[j]);
                     _NotePreRenderList[i].ResamplerArg = ra;
                     _NotePreRenderList[i].ResamplerArgList = ResList;
                     _NotePreRenderList[i].WavtoolArgs = wa;
-                    _NotePreRenderList[i].WavtoolArgList = LSL.ToArray();// WavList;
+                    _NotePreRenderList[i].WavtoolArgList = WavList;// LSL.ToArray();// WavList;
                 }
             });
         }

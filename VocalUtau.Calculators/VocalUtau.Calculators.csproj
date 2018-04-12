@@ -39,6 +39,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BarkerCalculator.cs" />
+    <Compile Include="BinaryFileStruct.cs" />
     <Compile Include="NoteListCalculator.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TrackCalculator.cs" />

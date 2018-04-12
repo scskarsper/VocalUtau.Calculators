@@ -17,20 +17,28 @@ namespace VocalUtau.Calculators
         {
             this.SingerDataFinder = SingerDataFinder;
         }
-        public List<NoteListCalculator.NotePreRender> CalcTracker(TrackerObject tracker, double BaseTempo)
+        public List<NoteListCalculator.NotePreRender> CalcTracker(double TimePosition,TrackerObject tracker, double BaseTempo)
         {
             List<NoteListCalculator.NotePreRender> ResultList = new List<NoteListCalculator.NotePreRender>();
             Dictionary<int, NoteListCalculator.NotePreRender[]> PreCalcer = new Dictionary<int, NoteListCalculator.NotePreRender[]>();
             Object oLocker = new Object();
-            Parallel.For(0, tracker.PartList.Count, (i) =>
+            Parallel.For(0, tracker.PartList.Count, (i, ParallelLoopState) =>
             {
-                NoteListCalculator nlc = new NoteListCalculator(SingerDataFinder);
-                nlc.FillPartsNotes(tracker.PartList[0], 0);
-                lock (oLocker)
+                if (tracker.PartList[i].getStartTime() + tracker.PartList[i].getDuringTime() < TimePosition)
                 {
-                    PreCalcer.Add(i, nlc.NotePreRenderList.ToArray());
+                    ParallelLoopState.Break();
+                }
+                else
+                {
+                    NoteListCalculator nlc = new NoteListCalculator(SingerDataFinder);
+                    nlc.FillPartsNotes(tracker.PartList[i], 0);
+                    lock (oLocker)
+                    {
+                        PreCalcer.Add(i, nlc.NotePreRenderList.ToArray());
+                    }
                 }
             });
+            double DelayTime = TimePosition;
             double TimeState = 0;
             for (int i = 0; i < tracker.PartList.Count; i++)
             {
@@ -51,49 +59,89 @@ namespace VocalUtau.Calculators
                         TickLength -= 480;
                         TickRStart += 480;
                         npr.Tempo = BaseTempo;
+                        npr.partStartTime = TimeState;
                         npr.Note = "{R}";
                         npr.TimeLen = MidiMathUtils.Tick2Time(npr.Length, BaseTempo) * 1000;
                         LastR = npr;
+
+                        VocalUtau.Calculators.NoteListCalculator.NotePreRender fn = null;
+                        if (PreCalcer.ContainsKey(i))
+                        {
+                            try
+                            {
+                                fn = PreCalcer[i][0];
+                            }
+                            catch { ;}
+                        }
+                        UtauRendCommanderUtils.WavtoolArgs wa = NoteListCalculator.NPR2WavtoolArgs(npr, (TickLength>=480)?npr:fn, "{RESAMPLEROUTPUT}", "{WAVOUTPUT}");
+                        npr.WavtoolArgs = wa;
+                        npr.WavtoolArgList=UtauRendCommanderUtils.GetWavtoolArgs(wa);
                         ResultList.Add(npr);
                     }
                 }
                 //FixFirstNode
-                if (LastR != null)
+                if (PreCalcer.ContainsKey(i))
                 {
-                    try
+                    if (LastR != null)
                     {
-                        VocalUtau.Calculators.NoteListCalculator.NotePreRender Nxt = PreCalcer[i][0];
-                        if (Nxt != null)
+                        try
                         {
-                            if (Nxt.Note != "{R}")
+                            VocalUtau.Calculators.NoteListCalculator.NotePreRender Nxt = PreCalcer[i][0];
+                            if (Nxt != null)
                             {
-                                double PRE = Nxt.RealPreUtterOverArgs.PreUtterance;
-                                double OVL = Nxt.RealPreUtterOverArgs.OverlapMs;
-                                double KickFront = PRE - OVL;
-                                double halfNote = LastR.TimeLen;
-                                if (halfNote < KickFront)
+                                if (Nxt.Note != "{R}")
                                 {
-                                    //NEED FIX
-                                    double ovl = OVL / (PRE - OVL) * halfNote;
-                                    double pre = PRE / (PRE - OVL) * halfNote;
-                                    if (Nxt.FadeInLengthMs == OVL)
+                                    double PRE = Nxt.RealPreUtterOverArgs.PreUtterance;
+                                    double OVL = Nxt.RealPreUtterOverArgs.OverlapMs;
+                                    double KickFront = PRE - OVL;
+                                    double halfNote = LastR.TimeLen;
+                                    if (halfNote < KickFront)
                                     {
-                                        Nxt.FadeInLengthMs = ovl;
+                                        //NEED FIX
+                                        double ovl = OVL / (PRE - OVL) * halfNote;
+                                        double pre = PRE / (PRE - OVL) * halfNote;
+                                        if (Nxt.FadeInLengthMs == OVL)
+                                        {
+                                            Nxt.FadeInLengthMs = ovl;
+                                        }
+                                        Nxt.RealPreUtterOverArgs.OverlapMs = ovl;
+                                        Nxt.RealPreUtterOverArgs.PreUtterance = pre;
+                                        Nxt.StartPoint = PRE - pre;
+                                        Nxt.StartTimeAttend = -Nxt.RealPreUtterOverArgs.OverlapMs / 1000;
                                     }
-                                    Nxt.RealPreUtterOverArgs.OverlapMs = ovl;
-                                    Nxt.RealPreUtterOverArgs.PreUtterance = pre;
-                                    Nxt.StartPoint = PRE - pre;
                                 }
                             }
                         }
+                        catch { ;}
                     }
-                    catch { ;}
+                    NoteListCalculator.NotePreRender[] LCL = PreCalcer[i];
+                    for (int k = 0; k < LCL.Length; k++)
+                    {
+                        NoteListCalculator.NotePreRender pcr = LCL[k];
+                        ResultList.Add(pcr);
+                    }
+                    TimeState = p.getStartTime() + p.getDuringTime();
                 }
-                ResultList.AddRange(PreCalcer[i]);
-                TimeState = p.getStartTime() + p.getDuringTime();
+            }
+            for (int i = 0; i < ResultList.Count; i++)
+            {
+                double EndTime = ResultList[i].absoluteStartTime * 1000 + ResultList[i].TimeLen;
+                if (EndTime == ResultList[i].absoluteStartTime * 1000)
+                {
+                    long TB = 0;
+                }
+                if (EndTime < TimePosition*1000)
+                {
+                    ResultList.RemoveAt(i);
+                    i--;
+                }
+                else if (ResultList[i].absoluteStartTime < TimePosition)
+                {
+                    ResultList[i].passTime = (TimePosition - ResultList[i].absoluteStartTime) * 1000;
+                }
             }
             //FixFirstNodeEnd
-            Debug_CreateBat(ResultList, tracker, BaseTempo);
+          //  Debug_CreateBat(ResultList, tracker, BaseTempo);
             return ResultList;
         }
 
