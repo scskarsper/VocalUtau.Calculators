@@ -37,5 +37,13 @@ namespace VocalUtau.Calculators
             get { return _BarkerTrackVolumes; }
             set { _BarkerTrackVolumes = value; }
         }
+
+        double _StartTimePosition = 0;
+
+        public double StartTimePosition
+        {
+            get { return _StartTimePosition; }
+            set { _StartTimePosition = value; }
+        }
     }
 }
