@@ -19,4 +19,3 @@ D:\VocalUtau\IncludeLib\VocalUtau.Calculators\VocalUtau.Calculators\bin\Debug\Ba
 D:\VocalUtau\IncludeLib\VocalUtau.Calculators\VocalUtau.Calculators\obj\Debug\VocalUtau.Calculators.csprojResolveAssemblyReference.cache
 D:\VocalUtau\IncludeLib\VocalUtau.Calculators\VocalUtau.Calculators\obj\Debug\VocalUtau.Calculators.dll
 D:\VocalUtau\IncludeLib\VocalUtau.Calculators\VocalUtau.Calculators\obj\Debug\VocalUtau.Calculators.pdb
-D:\VocalUtau\IncludeLib\VocalUtau.Calculators\VocalUtau.Calculators\bin\Debug\NUniversalCharDet.pdb
