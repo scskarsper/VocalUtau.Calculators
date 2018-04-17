@@ -34,6 +34,8 @@ namespace VocalUtau.Calculators
             public string Flags { get; set; }
             public string Resampler { get; set; }
 
+            public int ConsonantVelocity { get; set; }
+
             private SoundAtom.PreUtterOverlapArgs _realPreUtterOverArgs = new SoundAtom.PreUtterOverlapArgs();
 
             public SoundAtom.PreUtterOverlapArgs RealPreUtterOverArgs
@@ -246,7 +248,7 @@ namespace VocalUtau.Calculators
                         NotePreRender pra = new NotePreRender();
                         pra.Tempo = parts.Tempo;
                         pra.partStartTime = parts.StartTime;
-
+                        pra.ConsonantVelocity = (int)defDouble(curNote.PhonemeAtoms[j].Velocity, 100);
                         pra.Tick = TotalTick;
                         pra.Length = NPT[j];
                         pra.TimeLen = MidiMathUtils.Tick2Time(pra.Length,parts.Tempo)*1000;
@@ -385,6 +387,7 @@ namespace VocalUtau.Calculators
                         while (totalp > 0)
                         {
                             NotePreRender npr = new NotePreRender();
+                            npr.ConsonantVelocity = 100;
                             npr.OtoAtom = new SoundAtom();
                             npr.OtoAtom.PhonemeSymbol = "{R}";
                             npr.Tick = Pre.Tick + Pre.Length;
@@ -409,6 +412,7 @@ namespace VocalUtau.Calculators
                         while (totalp > 0)
                         {
                             NotePreRender npr = new NotePreRender();
+                            npr.ConsonantVelocity = 100;
                             npr.OtoAtom = new SoundAtom();
                             npr.OtoAtom.PhonemeSymbol = "{R}";
                             npr.Tick = dbp - totalp;
