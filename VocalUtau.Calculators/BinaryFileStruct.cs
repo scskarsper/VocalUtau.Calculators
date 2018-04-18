@@ -15,12 +15,12 @@ namespace VocalUtau.Calculators
             get { return _VocalTrackStructs; }
             set { _VocalTrackStructs = value; }
         }
-        Dictionary<int, float> _VocalTrackVolumes = new Dictionary<int, float>();
+        Dictionary<int, float> _TrackVolumes = new Dictionary<int, float>();
 
-        public Dictionary<int, float> VocalTrackVolumes
+        public Dictionary<int, float> TrackVolumes
         {
-            get { return _VocalTrackVolumes; }
-            set { _VocalTrackVolumes = value; }
+            get { return _TrackVolumes; }
+            set { _TrackVolumes = value; }
         }
 
         Dictionary<int, List<VocalUtau.Calculators.BarkerCalculator.BgmPreRender>> _BarkerTrackStructs = new Dictionary<int, List<VocalUtau.Calculators.BarkerCalculator.BgmPreRender>>();
@@ -30,13 +30,6 @@ namespace VocalUtau.Calculators
             get { return _BarkerTrackStructs; }
             set { _BarkerTrackStructs = value; }
         }
-        Dictionary<int, float> _BarkerTrackVolumes = new Dictionary<int, float>();
-
-        public Dictionary<int, float> BarkerTrackVolumes
-        {
-            get { return _BarkerTrackVolumes; }
-            set { _BarkerTrackVolumes = value; }
-        }
 
         double _StartTimePosition = 0;
 
@@ -44,6 +37,14 @@ namespace VocalUtau.Calculators
         {
             get { return _StartTimePosition; }
             set { _StartTimePosition = value; }
+        }
+
+        float _GlobalVolume = 1.0f;
+
+        public float GlobalVolume
+        {
+            get { return _GlobalVolume; }
+            set { _GlobalVolume = value; }
         }
     }
 }
